@@ -33,16 +33,31 @@ if st.button("Generate Sitemap"):
                 sitemap += f"<url><loc>{result['url']}</loc></url>"
             sitemap += "</urlset>"
 
-            # Save sitemap to file and give user link to download
+            # Save sitemap to file and upload to GitHub
             filename = f"{query.replace(' ', '_')}.xml"
-            st.write(f"Saving sitemap to file: {filename}")
-
             with open(filename, "w") as f:
                 f.write(sitemap)
-
-            # Display sitemap for debugging purposes
-            st.markdown(f"Sitemap generated! Download <a href='https://armaangis-streamlit-bingsearchsitemap-app-gkp1c8.streamlit.app/{filename}' download target='_blank'>here</a>.", unsafe_allow_html=True)
-            st.download_button('Download', sitemap)  # Defaults to 'text/plain'
+            st.write(f"Saving sitemap to file: {filename}")
+            
+            # Upload to GitHub and get URL
+            response = requests.put(
+                f"https://api.github.com/repos/{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO']}/contents/{filename}",
+                headers={"Authorization": f"token {st.secrets['GITHUB_TOKEN']}"}, 
+                json={
+                    "message": f"Add {filename}",
+                    "committer": {
+                        "name": st.secrets['GITHUB_USERNAME'],
+                        "email": st.secrets['GITHUB_EMAIL']
+                    },
+                    "content": sitemap
+                }
+            )
+            if response.status_code != 201:
+                st.error("Failed to upload sitemap to GitHub")
+            else:
+                # Get URL to file on GitHub and display to user
+                file_url = response.json()["content"]["html_url"]
+                st.markdown(f"Sitemap generated! Download <a href='{file_url}' download target='_blank'>here</a>.", unsafe_allow_html=True)
 
     except requests.exceptions.RequestException as e:
         st.error(f"API request failed with error {e}")
