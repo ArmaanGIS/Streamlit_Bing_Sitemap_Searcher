@@ -1,8 +1,9 @@
 import streamlit as st
 import requests
+import base64
 
 # Define constants
-BASE_URL = "https://api.bing.microsoft.com/v7.0/search"
+BASE_URL = "https://api.github.com"
 MAX_RESULTS = 100
 
 # Set up Streamlit app
@@ -33,28 +34,26 @@ if st.button("Generate Sitemap"):
                 sitemap += f"<url><loc>{result['url']}</loc></url>"
             sitemap += "</urlset>"
 
-            # Save sitemap to file and upload to GitHub
-            filename = f"{query.replace(' ', '_')}.xml"
-            with open(filename, "w") as f:
-                f.write(sitemap)
-            st.write(f"Saving sitemap to file: {filename}")
-            
+            # Encode sitemap in Base64
+            sitemap_b64 = base64.b64encode(sitemap.encode("utf-8")).decode("utf-8")
+
             # Upload to GitHub and get URL
+            endpoint = f"/repos/{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO']}/contents/{query.replace(' ', '_')}.xml"
             response = requests.put(
-                f"https://api.github.com/repos/{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO']}/contents/{filename}",
+                BASE_URL + endpoint,
                 headers={"Authorization": f"token {st.secrets['GITHUB_TOKEN']}"}, 
                 json={
-                    "message": f"Add {filename}",
+                    "message": f"Add {query.replace(' ', '_')}.xml",
                     "committer": {
                         "name": st.secrets['GITHUB_USERNAME'],
                         "email": st.secrets['GITHUB_EMAIL']
                     },
-                    "content": sitemap
+                    "content": sitemap_b64,
+                    "branch": "main"
                 }
             )
             if response.status_code != 201:
-                st.write(response.content)
-                
+                st.error("Failed to upload sitemap to GitHub")
             else:
                 # Get URL to file on GitHub and display to user
                 file_url = response.json()["content"]["html_url"]
