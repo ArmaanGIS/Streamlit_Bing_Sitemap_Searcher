@@ -64,3 +64,4 @@ if st.button("Generate Sitemap"):
         st.error(f"API request failed with error {e}")
     except KeyError:
         st.error("Invalid response format")
+ 
