@@ -1,11 +1,10 @@
 import streamlit as st
 import requests
-import base64
 
 # Define constants
-BASE_URL = "https://api.github.com"
+BASE_URL = "https://api.bing.microsoft.com/v7.0/search"
 MAX_RESULTS = 100
-
+ 
 # Set up Streamlit app
 st.title("Sitemap Generator")
 query = st.text_input("Enter your query:")
@@ -34,22 +33,23 @@ if st.button("Generate Sitemap"):
                 sitemap += f"<url><loc>{result['url']}</loc></url>"
             sitemap += "</urlset>"
 
-            # Encode sitemap in Base64
-            sitemap_b64 = base64.b64encode(sitemap.encode("utf-8")).decode("utf-8")
-
+            # Save sitemap to file and upload to GitHub
+            filename = f"{query.replace(' ', '_')}.xml"
+            with open(filename, "w") as f:
+                f.write(sitemap)
+            st.write(f"Saving sitemap to file: {filename}")
+            
             # Upload to GitHub and get URL
-            endpoint = f"/repos/{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO']}/contents/{query.replace(' ', '_')}.xml"
             response = requests.put(
-                BASE_URL + endpoint,
+                f"https://api.github.com/repos/{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO']}/contents/{filename}",
                 headers={"Authorization": f"token {st.secrets['GITHUB_TOKEN']}"}, 
                 json={
-                    "message": f"Add {query.replace(' ', '_')}.xml",
+                    "message": f"Add {filename}",
                     "committer": {
                         "name": st.secrets['GITHUB_USERNAME'],
                         "email": st.secrets['GITHUB_EMAIL']
                     },
-                    "content": sitemap_b64,
-                    "branch": "main"
+                    "content": sitemap
                 }
             )
             if response.status_code != 201:
