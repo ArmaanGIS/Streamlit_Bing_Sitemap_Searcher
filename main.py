@@ -42,7 +42,7 @@ if st.button("Generate Sitemap"):
 
             # Display sitemap for debugging purposes
             share_url = st.get_share_streamlit_app_url()
-            st.markdown(f"Sitemap generated! Download <a href='{share_url}/{filename}' download target='_blank'>here</a>.", unsafe_allow_html=True)
+            st.markdown(f"Sitemap generated! Download <a href='https://armaangis-streamlit-bingsearchsitemap-app-gkp1c8.streamlit.app/{filename}' download target='_blank'>here</a>.", unsafe_allow_html=True)
 
     except requests.exceptions.RequestException as e:
         st.error(f"API request failed with error {e}")
