@@ -53,7 +53,9 @@ if st.button("Generate Sitemap"):
                 }
             )
             if response.status_code != 201:
+                st.write(response.content)
                 st.error("Failed to upload sitemap to GitHub")
+                
             else:
                 # Get URL to file on GitHub and display to user
                 file_url = response.json()["content"]["html_url"]
