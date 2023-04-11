@@ -1,10 +1,9 @@
 import streamlit as st
 import requests
-
+import base64
 # Define constants
 BASE_URL = "https://api.bing.microsoft.com/v7.0/search"
 MAX_RESULTS = 100
- 
 # Set up Streamlit app
 st.title("Sitemap Generator")
 query = st.text_input("Enter your query:")
@@ -19,7 +18,6 @@ if st.button("Generate Sitemap"):
             "textFormat": "HTML"
         }
         response = requests.get(BASE_URL, headers=headers, params=params)
-
         # Check response status code and content type
         if response.status_code != 200:
             st.error(f"API request failed with status code {response.status_code}")
@@ -32,13 +30,15 @@ if st.button("Generate Sitemap"):
             for result in results["webPages"]["value"]:
                 sitemap += f"<url><loc>{result['url']}</loc></url>"
             sitemap += "</urlset>"
-
             # Save sitemap to file and upload to GitHub
             filename = f"{query.replace(' ', '_')}.xml"
             with open(filename, "w") as f:
                 f.write(sitemap)
             st.write(f"Saving sitemap to file: {filename}")
             
+            sitemap_bytes = sitemap.encode("utf-8")
+            sitemap_b64 = base64.b64encode(sitemap_bytes).decode("utf-8")
+
             # Upload to GitHub and get URL
             response = requests.put(
                 f"https://api.github.com/repos/{st.secrets['GITHUB_USERNAME']}/{st.secrets['GITHUB_REPO']}/contents/{filename}",
@@ -49,10 +49,11 @@ if st.button("Generate Sitemap"):
                         "name": st.secrets['GITHUB_USERNAME'],
                         "email": st.secrets['GITHUB_EMAIL']
                     },
-                    "content": sitemap
+                    "content": sitemap_b64
                 }
             )
             if response.status_code != 201:
+                st.write(response.content)
                 st.error("Failed to upload sitemap to GitHub")
             else:
                 # Get URL to file on GitHub and display to user
